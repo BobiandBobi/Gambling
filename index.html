@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastgele Karakter</title>
+    <style>
+        body {
+            font-family: 'Indie Flower', cursive;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #87CEEB; /* Arka plan rengi mavi */
+        }
+        .box {
+            font-size: 50px;
+            cursor: pointer;
+        }
+        #result {
+            font-size: 30px;
+            margin-top: 20px;
+        }
+        #details {
+            font-size: 20px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+        #inventory {
+            margin-top: 40px;
+            padding: 20px;
+            border: 2px solid #000;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .inventory-item {
+            font-size: 20px;
+            margin: 5px;
+        }
+        .common { color: orange; }
+        .uncommon { color: blue; }
+        .rare { color: green; }
+        .ultraRare { color: red; }
+        .legendary { color: yellow; }
+        .hypercharged { color: purple; } /* Hiperşarjlılar için mor renk */
+        #countdown {
+            font-size: 30px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">📦</div> <!-- Emoji kutu -->
+    <div id="countdown">Geri Sayım: 3</div> <!-- Geri sayım bölümü -->
+    <div id="result">Sonuç için kutuya tıkla!</div>
+    <div id="details"></div>
+    <div id="inventory">
+        <h2>Envanter</h2>
+        <div id="inventory-list">Henüz bir karakter yok.</div>
+    </div>
+    <script>
+        const box = document.querySelector('.box');
+        const result = document.getElementById('result');
+        const details = document.getElementById('details');
+        const inventoryList = document.getElementById('inventory-list');
+        const countdownDisplay = document.getElementById('countdown');
+        const characters = {
+            common: ['Hobba', 'Jodu', 'Shoba', 'Groo', 'Dodo'],
+            uncommon: ['Mami', 'Klozo', 'Sasnupe', 'Heworon'],
+            rare: ['Hantron', 'Jogonto', 'Froggo', 'Aqrustun'],
+            ultraRare: ['Trox', 'Hellowen', 'Kamontos', 'Tochi', 'Klimbo'],
+            legendary: ['Bobi', 'Frono', 'Nurs']
+        };
+        const inventory = {};
+        
+        // Nadirlik sıralaması
+        const rarityOrder = {
+            common: 0,
+            uncommon: 1,
+            rare: 2,
+            ultraRare: 3,
+            legendary: 4,
+            hypercharged: 4 // Hiperşarjlı karakterler, aynı nadirlikte ancak daha iyi
+        };
+
+        let countdown = 3;
+        let countdownInterval;
+
+        function startCountdown() {
+            countdown = 3; // Sayacı 3'ten başlat
+            countdownDisplay.textContent = `Geri Sayım: ${countdown}`;
+            box.style.pointerEvents = 'none'; // Kutuyu tıklanamaz yap
+
+            countdownInterval = setInterval(() => {
+                countdown--;
+                countdownDisplay.textContent = `Geri Sayım: ${countdown}`;
+
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    box.style.pointerEvents = 'auto'; // Kutuyu tıklanabilir yap
+                    countdownDisplay.textContent = 'Kutu açabilirsin!';
+                }
+            }, 1000);
+        }
+
+        function getRandomCharacter(category) {
+            const index = Math.floor(Math.random() * category.length);
+            return category[index];
+        }
+
+        function addToInventory(character, rarityClass) {
+            if (!inventory[character]) {
+                inventory[character] = 1;
+            } else {
+                inventory[character]++;
+            }
+            updateInventoryDisplay(character, rarityClass);
+        }
+
+        function updateInventoryDisplay(character, rarityClass) {
+            let item = document.getElementById(character);
+            if (!item) {
+                item = document.createElement('div');
+                item.id = character;
+                item.classList.add('inventory-item', rarityClass);
+                inventoryList.appendChild(item);
+            }
+            item.textContent = `${character} ${inventory[character]}x`;
+
+            // Envanteri sırala
+            sortInventory();
+        }
+
+        function sortInventory() {
+            const items = Array.from(inventoryList.children);
+            items.sort((a, b) => {
+                const rarityA = rarityOrder[a.classList[1]];
+                const rarityB = rarityOrder[b.classList[1]];
+                return rarityA - rarityB;
+            });
+            inventoryList.innerHTML = ''; // Envanter listesini temizle
+            items.forEach(item => inventoryList.appendChild(item)); // Sıralı öğeleri tekrar ekle
+
+            if (inventoryList.children.length === 0) {
+                inventoryList.textContent = 'Henüz bir karakter yok.';
+            }
+        }
+
+        function clearInitialInventoryMessage() {
+            if (inventoryList.textContent === 'Henüz bir karakter yok.') {
+                inventoryList.textContent = '';
+            }
+        }
+
+        box.addEventListener('click', () => {
+            const random = Math.random() * 100;
+            let text = '';
+            let color = '';
+            let character = '';
+            let rarity = '';
+            let rarityClass = '';
+
+            if (countdown > 0) {
+                text = 'Kutu açmak için bekle!';
+                result.textContent = text;
+                return; // Sayaç sıfırlanmadan çık
+            }
+
+            if (random < 0.1) { // %0.1 olasılıkla Hiperşarjlı Efsanevi karakter
+                character = 'Hiperşarjlı ' + getRandomCharacter(characters.legendary);
+                text = `Hiperşarjlı karakter çıktı: ${character}`;
+                color = 'purple'; // Hiperşarjlılar için mor renk
+                rarityClass = 'hypercharged';
+            } else if (random < 0.2) { // %0.1 olasılıkla Hiperşarjlı Ultra Nadir karakter
+                character = 'Hiperşarjlı ' + getRandomCharacter(characters.ultraRare);
+                text = `Hiperşarjlı karakter çıktı: ${character}`;
+                color = 'purple'; 
+                rarityClass = 'hypercharged';
+            } else if (random < 0.5) { // %0.3 olasılıkla Hiperşarjlı Nadir karakter
+                character = 'Hiperşarjlı ' + getRandomCharacter(characters.rare);
+                text = `Hiperşarjlı karakter çıktı: ${character}`;
+                color = 'purple'; 
+                rarityClass = 'hypercharged';
+            } else if (random < 1) { // %0.5 olasılıkla Hiperşarjlı Sıra Dışı karakter
+                character = 'Hiperşarjlı ' + getRandomCharacter(characters.uncommon);
+                text = `Hiperşarjlı karakter çıktı: ${character}`;
+                color = 'purple'; 
+                rarityClass = 'hypercharged';
+            } else if (random < 2) { // %1 olasılıkla Hiperşarjlı Sıradan karakter
+                character = 'Hiperşarjlı ' + getRandomCharacter(characters.common);
+                text = `Hiperşarjlı karakter çıktı: ${character}`;
+                color = 'purple'; 
+                rarityClass = 'hypercharged';
+            } else if (random < 3) { // %1 olasılıkla Efsanevi karakter
+                rarity = 'Efsanevi';
+                character = getRandomCharacter(characters.legendary);
+                text = `${rarity} karakter çıktı: ${character}`;
+                color = 'yellow';
+                rarityClass = 'legendary';
+            } else if (random < 6) { // %3 olasılıkla Ultra Nadir karakter
+                rarity = 'Ultra Nadir';
+                character = getRandomCharacter(characters.ultraRare);
+                text = `${rarity} karakter çıktı: ${character}`;
+                color = 'red';
+                rarityClass = 'ultraRare';
+            } else if (random < 16) { // %10 olasılıkla Nadir karakter
+                rarity = 'Nadir';
+                character = getRandomCharacter(characters.rare);
+                text = `${rarity} karakter çıktı: ${character}`;
+                color = 'green';
+                rarityClass = 'rare';
+            } else if (random < 31) { // %15 olasılıkla Sıra Dışı karakter
+                rarity = 'Sıra Dışı';
+                character = getRandomCharacter(characters.uncommon);
+                text = `${rarity} karakter çıktı: ${character}`;
+                color = 'blue';
+                rarityClass = 'uncommon';
+            } else if (random < 51) { // %20 olasılıkla Sıradan karakter
+                rarity = 'Sıradan';
+                character = getRandomCharacter(characters.common);
+                text = `${rarity} karakter çıktı: ${character}`;
+                color = 'orange';
+                rarityClass = 'common';
+            } else { // %49 olasılıkla Hiçbir şey çıkmadı
+                text = 'Hiçbir şey çıkmadı!';
+                color = 'black';
+            }
+
+            result.textContent = text;
+            result.style.color = color;
+            if (character) {
+                details.textContent = `${rarity ? rarity + ' ' : ''}karakter detayı: ${character}`;
+                clearInitialInventoryMessage();
+                addToInventory(character, rarityClass);
+            }
+            startCountdown(); // Sayacı başlat
+        });
+
+        // İlk sayacı başlat
+        startCountdown();
+    </script>
+</body>
+</html>
